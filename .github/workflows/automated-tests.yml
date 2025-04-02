@@ -1,6 +1,6 @@
 name: "Automated tests"
 on:
-  push:
+  workflow_dispatch:
     branches:
       - "develop"
       - "v2.[5-9].x-release"
@@ -390,6 +390,8 @@ jobs:
           sudo -i <<EOF
           systemctl --type=service --state=running,exited,failed --all --no-pager --no-legend
           EOF
+      - name: Install Strace
+        run: npx install strace
       - name: Install test dependencies
         working-directory: ./bigbluebutton-tests/playwright
         timeout-minutes: 25
@@ -407,7 +409,7 @@ jobs:
           ACTIONS_RUNNER_DEBUG: true
           BBB_URL: https://bbb-ci.test/bigbluebutton/api
           BBB_SECRET: bbbci
-        run: npm run test-chromium-ci -- --shard=${{ env.shard }}
+        run: strace -ff npm run test-chromium-ci -- --shard=${{ env.shard }}
       - name: Run Firefox tests
         working-directory: ./bigbluebutton-tests/playwright
         if: |
@@ -422,7 +424,7 @@ jobs:
         run: |
           sh -c '
           find $HOME/.cache/ms-playwright -name libnssckbi.so -exec rm {} \; -exec ln -s /usr/lib/x86_64-linux-gnu/pkcs11/p11-kit-trust.so {} \;
-          npm run test-firefox-ci -- --shard=${{ env.shard }}
+          strace -ff npm run test-firefox-ci -- --shard=${{ env.shard }}
           '
       - if: always()
         name: Upload blob report to GitHub Actions Artifacts
