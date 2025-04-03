@@ -409,10 +409,11 @@ jobs:
           ACTIONS_RUNNER_DEBUG: true
           BBB_URL: https://bbb-ci.test/bigbluebutton/api
           BBB_SECRET: bbbci
-        run:
+        run: |
+          sh -c ' 
           touch strace_log.txt
           strace -o strace_log.txt -ff npm run test-chromium-ci -- --shard=${{ env.shard }}
-
+          '
       - name: Upload strace logs
         uses: actions/upload-artifact@v4
         with:
