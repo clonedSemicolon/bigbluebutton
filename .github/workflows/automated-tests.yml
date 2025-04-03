@@ -412,10 +412,11 @@ jobs:
         run: strace -o strace_log.txt -ff npm run test-chromium-ci -- --shard=${{ env.shard }}
 
       - name: Upload strace logs
+        working-directory: ./bigbluebutton-tests/playwright
         uses: actions/upload-artifact@v4
         with:
           name: strace-logs
-          path: ./bigbluebutton-tests/playwright/strace_log.txt  
+          path: strace_log.txt  
       - name: Run Firefox tests
         working-directory: ./bigbluebutton-tests/playwright
         if: |
