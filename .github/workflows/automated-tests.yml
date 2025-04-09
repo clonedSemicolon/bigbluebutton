@@ -401,6 +401,9 @@ jobs:
           '
       - name: Check strace installation
         run: which strace
+
+      - name: Show workspace directory
+        run: echo "Workspace directory is $GITHUB_WORKSPACE"  
       
       - name: Run tests with strace and upload logs directly
         working-directory: ./bigbluebutton-tests/playwright
@@ -411,17 +414,24 @@ jobs:
           BBB_URL: https://bbb-ci.test/bigbluebutton/api
           BBB_SECRET: bbbci
         run: |
-          # Generate a dynamic timestamp for the log file
-          LOG_FILE="/tmp/strace_log_$(date +%Y%m%d%H%M%S).txt"
-          
-          # Run strace and generate logs in a temporary location
-          echo "Running strace with log file: $LOG_FILE"
-          strace -ff -o "$LOG_FILE" npm run test-chromium-ci -- --shard=${{ env.shard }} || { echo "strace failed"; exit 1; }
-          
-          # Upload the generated log files directly to GitHub Actions as artifacts
-          echo "Uploading strace logs..."
-          mkdir -p $GITHUB_WORKSPACE/logs
-          mv "$LOG_FILE" $GITHUB_WORKSPACE/logs/
+          # Generate a dynamic timestamp for the log directory
+          LOG_DIR="$GITHUB_WORKSPACE/logs/strace_logs_$(date +%Y%m%d%H%M%S)"
+          mkdir -p "$LOG_DIR"
+      
+          # Run strace with output directed to the log directory
+          echo "Running strace with logs in $LOG_DIR"
+          strace -ff -o "$LOG_DIR/strace_log" npm run test-chromium-ci -- --shard=${{ env.shard }} || { echo "strace failed"; exit 1; }
+      
+          # Check if logs were created and list the files for verification
+          echo "Listing strace logs created:"
+          ls -lh "$LOG_DIR"
+      
+      - name: Upload strace logs
+        uses: actions/upload-artifact@v4
+        with:
+          name: strace-logs
+          path: $GITHUB_WORKSPACE/logs/strace_logs_*/**/*
+
       
       - name: Upload strace logs as artifacts
         uses: actions/upload-artifact@v4
