@@ -401,8 +401,8 @@ jobs:
           '
       - name: Check strace installation
         run: which strace
-
-      - name: Run tests
+      
+      - name: Run tests with strace and upload logs directly
         working-directory: ./bigbluebutton-tests/playwright
         timeout-minutes: 25
         env:
@@ -412,32 +412,23 @@ jobs:
           BBB_SECRET: bbbci
         run: |
           # Generate a dynamic timestamp for the log file
-          LOG_FILE="${GITHUB_WORKSPACE}/strace_log_$(date +%Y%m%d%H%M%S).txt"
+          LOG_FILE="/tmp/strace_log_$(date +%Y%m%d%H%M%S).txt"
           
-          # Run strace with the generated log file name
-          strace -ff -o "$LOG_FILE" npm run test-chromium-ci -- --shard=${{ env.shard }}
+          # Run strace and generate logs in a temporary location
+          echo "Running strace with log file: $LOG_FILE"
+          strace -ff -o "$LOG_FILE" npm run test-chromium-ci -- --shard=${{ env.shard }} || { echo "strace failed"; exit 1; }
           
-          # Check if strace ran successfully
-          if [ $? -ne 0 ]; then
-            echo "strace failed to run"
-            exit 1
-          fi
-          
-          # List the log files to ensure the log was generated
-          ls -alh "$LOG_FILE"
+          # Upload the generated log files directly to GitHub Actions as artifacts
+          echo "Uploading strace logs..."
+          mkdir -p $GITHUB_WORKSPACE/logs
+          mv "$LOG_FILE" $GITHUB_WORKSPACE/logs/
       
-      - name: Upload strace logs
+      - name: Upload strace logs as artifacts
         uses: actions/upload-artifact@v4
         with:
           name: strace-logs
-          path: ./strace_log_*.txt
+          path: $GITHUB_WORKSPACE/logs/*.txt
 
-      
-      - name: Upload strace logs
-        uses: actions/upload-artifact@v4
-        with:
-          name: strace-logs
-          path: ./strace_log_*.txt
     
       - name: Run Firefox tests
         working-directory: ./bigbluebutton-tests/playwright
