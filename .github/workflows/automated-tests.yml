@@ -400,7 +400,7 @@ jobs:
           npx playwright install
           '
       - name: Check strace installation
-  run: which strace
+        run: which strace
 
       - name: Run tests
         working-directory: ./bigbluebutton-tests/playwright
